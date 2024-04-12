@@ -55,6 +55,42 @@ def plot_clusters(X, y, dim, points,
     plt.grid()
     plt.show()
 
+def cluster_gonzalez2 (X, num_clusters):
+    # Initialization
+    heads = np.zeros(num_clusters, dtype=int)
+    B = []
+    for i in range(num_clusters):
+        B.append([])
+    B[0]=list(range(X.shape[0]))
+    
+    # Expansion phase
+    for l in range(num_clusters-1):
+        h = 0
+        index = -1
+        to_pop = -1
+        for j in range(l+1):
+    # Finding most distant element from current head
+            for vi in B[j]:
+                distance = point_euclidean_distance(X[heads[j]], X[vi])
+                if distance > h:
+                    h = distance
+                    index = vi
+                    to_pop = j
+    # Reassigning the most distant element to the new cluster and setting it as the head
+        B[to_pop].remove(index)
+        B[l+1].append(index)
+        heads[l+1] = index
+    
+        for j in range(l+1):
+            to_remove = []
+            for vt in B[j]:
+                if point_euclidean_distance(X[vt], X[heads[j]])>= point_euclidean_distance(X[vt], X[index]):
+                    to_remove.append(vt)
+            for vt in to_remove:
+                B[j].remove(vt)
+                B[l+1].append(vt)
+    return B
+
 
 def cluster_gonzalezMedoid (X, num_clusters):
     # Initialization

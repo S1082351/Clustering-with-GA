@@ -12,10 +12,9 @@ from utils_parser import *
 
 
 
-# python Codes/executeMedoid.py Dim032
+# python Codes/executeCentroidFixed.py Dim032
 def main() -> None:
-    parser = argparse.ArgumentParser(description='Script for executing medoid clustering.')
-
+    parser = argparse.ArgumentParser(description='Script for executing fixed centroid clustering.')
 
     parser.add_argument('data', metavar='data', type=str, choices=DIM_DATA,
                     help='The data to cluster.')
@@ -23,16 +22,18 @@ def main() -> None:
     arguments = parser.parse_args()
 
     data_file = vars(arguments)['data']
-    
-    num_generations=81
-    sol_per_pop=62
-    num_parents_mating=33
+
+    random_mutation_max_val = 0.55
+
+    num_generations=66
+    sol_per_pop=76
+    num_parents_mating=72
 
     data_dir = (os.path.join(os.path.curdir,'PreparedArtificialData'))
-
     Datasets_dir = os.path.join(data_dir,'scaled_datasets')
 
     dataset_path = os.path.join(Datasets_dir, data_file)
+
 
 
     # Read data file
@@ -41,7 +42,6 @@ def main() -> None:
     X = pd.read_csv(f"{dataset_path}.csv", header = None)
 
     X = X.to_numpy()
-
 
     n_clusters_file = 'Codes/n_clusters_artificial.csv'
 
@@ -59,79 +59,78 @@ def main() -> None:
     
     global num_clusters
     num_clusters = int(n_clusters_dic[data_file])
-    num_genes = num_clusters
+    num_genes = num_clusters * X.shape[1]
 
-    initial_pop = [list(cluster_gonzalezMedoid(X, num_clusters))]
-    rng = np.random.default_rng()
-    for i in range(sol_per_pop-1):
-        initial_pop.append(list(rng.choice(X.shape[0], num_clusters, replace=False)))
-    
+    # Gonzalez chromosome
+    B = cluster_gonzalez2(X, num_clusters)
 
+    labels = np.zeros(X.shape[0], dtype=int)
+    for label in range(len(B)):
+        for i in B[label]:
+            labels[i]=label
+    cluster_centers = []
+    for cluster in range(num_clusters):
+        positions = np.where(labels==cluster)[0]
+        cluster_center = np.sum(X[positions],axis=0)/len(positions)
+        cluster_centers = np.append(cluster_centers,cluster_center)
+    initial_pop = [cluster_centers]
 
-
-    ga_instance = pygad.GA(num_generations=int(num_generations),
-                       sol_per_pop=int(sol_per_pop),
-                       num_parents_mating=num_parents_mating,
-                       initial_population=initial_pop,
-                       gene_type=int,
-                       # init_range_low=0,
-                       # init_range_high=X.shape[0]-1,
-                       random_mutation_min_val=0,
-                       random_mutation_max_val=X.shape[0],
-                       mutation_by_replacement=True,
-                       allow_duplicate_genes=False,                       
-                       gene_space = {"low": 0, "high": X.shape[0]-1},
-                       mutation_type='random',
-                       num_genes=int(num_genes),
-                       fitness_func=fitness_func_DBI,
-                       suppress_warnings=True,
-                       stop_criteria='saturate_30',
-                       on_generation=on_generation,
-                       save_best_solutions=True)
-
-    print('CLustering start\n')
-
-    ga_instance.run()
-
-    print('CLustering end\n')
-
-
-
-    # best_solution, best_solution_fitness, best_solution_idx = ga_instance.best_solution()
-    best_solution = ga_instance.best_solutions[-1]
-    cluster_centers, all_clusters_dists, cluster_indices, clusters, clusters_sum_dist = cluster_data(best_solution, 0)
+    # Checking DBI and silhouette for the Gonzalez chromosome
+    cluster_indices = cluster_data_DBI(cluster_centers, 0)
     
     DBI = davies_bouldin_score(X, cluster_indices)
     sil = silhouette_score(X,cluster_indices)
     sil = '{:.4f}'.format(sil)
     DBI = '{:.4f}'.format(DBI)
 
-    if data_file not in NO_LABELS:
-        real_labels_path = os.path.join('Labels',f'{data_file}.txt')
-        with open(real_labels_path, 'r') as f:
-            real_labels_list = f.readline()
-        real_labels_list = real_labels_list.removeprefix('[')
-        real_labels_list = ' ' + real_labels_list
-        real_labels_list = real_labels_list.removesuffix(']')
-        real_labels_array = np.array(real_labels_list.split(','))
 
-        jaccard = calculate_jaccard(real_labels_array, cluster_indices)
-        jaccard = '{:.4f}'.format(jaccard)
-    else:
-        jaccard = None
+    print(f'Initial DBI: {DBI}')
+    print(f' Initial sil: {sil}')       
 
-
-
-    print(f"Sil: {sil}\tDBI: {DBI}\tJAC: {jaccard}")
-
+    
+    initial_pop = [list(np.zeros(num_genes))]
 
 
     
+    for i in range(sol_per_pop-1):
+        initial_pop.append(list(np.random.uniform(low=0, high=1, size=(num_genes,))))
+
+
+
+
+# Running the GA
+
+    ga_instance = pygad.GA(num_generations=int(num_generations),
+                       sol_per_pop=int(sol_per_pop),
+                       num_parents_mating=num_parents_mating,
+                       gene_type=float,
+                       # init_range_low=0,
+                       # init_range_high=1,                       
+                       random_mutation_max_val=random_mutation_max_val,
+                       random_mutation_min_val=-random_mutation_max_val,
+                       # keep_parents=1,
+                       mutation_type='random',
+                       num_genes=int(num_genes),
+                       fitness_func=fitness_func_DBI,
+                       suppress_warnings=True,                       
+                       gene_space = {"low": 0, "high": 1},
+                       on_generation=on_generation,
+                       stop_criteria='saturate_30',
+                       save_best_solutions=True)
+
+
+
+    ga_instance.run()
+
+
+
+
+
+
+
     # best_solution, best_solution_fitness, best_solution_idx = ga_instance.best_solution()
     best_solution = ga_instance.best_solutions[-1]
     cluster_centers, all_clusters_dists, cluster_indices, clusters, clusters_sum_dist = cluster_data(best_solution, 0)
-    
-    plot_clusters(X,cluster_indices,dim=(0,1), points = cluster_centers)
 
     real_centers = []
     for cluster_idx in range(num_clusters):
@@ -144,8 +143,19 @@ def main() -> None:
     real_centers_array = np.array(real_centers)
 
     plot_clusters(X,cluster_indices,dim=(0,1), points = real_centers_array)
-    
 
+
+
+
+
+    DBI = davies_bouldin_score(X, cluster_indices)
+    sil = silhouette_score(X,cluster_indices)
+    sil = '{:.4f}'.format(sil)
+    DBI = '{:.4f}'.format(DBI)
+
+
+    print(f'Final DBI: {DBI}')
+    print(f'Final sil: {sil}')
 
 
 
@@ -156,13 +166,13 @@ def on_generation(ga_instance):
 
 def cluster_data_DBI(solution, solution_idx):
     global num_clusters, X
+    feature_vector_length = X.shape[1]
     cluster_centers = []
     all_clusters_dists = []
 
-    for i, medoid in enumerate(solution):
-
-        cluster_centers.append(X[medoid])
-        cluster_center_dists = euclidean_distance(X, cluster_centers[i])
+    for clust_idx in range(num_clusters):
+        cluster_centers.append(solution[feature_vector_length*clust_idx:feature_vector_length*(clust_idx+1)])
+        cluster_center_dists = euclidean_distance(X, cluster_centers[clust_idx])
         all_clusters_dists.append(np.array(cluster_center_dists))
 
     cluster_centers = np.array(cluster_centers)
@@ -175,17 +185,15 @@ def cluster_data_DBI(solution, solution_idx):
 
 def cluster_data(solution, solution_idx):
     global num_clusters, X
+    feature_vector_length = X.shape[1]
     cluster_centers = []
     all_clusters_dists = []
     clusters = []
     clusters_sum_dist = []
 
-
-    for i, medoid in enumerate(solution):
-
-        
-        cluster_centers.append(X[medoid])
-        cluster_center_dists = euclidean_distance(X, cluster_centers[i])
+    for clust_idx in range(num_clusters):
+        cluster_centers.append(solution[feature_vector_length*clust_idx:feature_vector_length*(clust_idx+1)])
+        cluster_center_dists = euclidean_distance(X, cluster_centers[clust_idx])
         all_clusters_dists.append(np.array(cluster_center_dists))
 
     cluster_centers = np.array(cluster_centers)
@@ -208,10 +216,13 @@ def cluster_data(solution, solution_idx):
 def fitness_func_DBI(GA, solution, solution_idx):
     
     cluster_indices = cluster_data_DBI(solution, solution_idx)
+    if np.unique(cluster_indices).size < 2:
+        fitness = 0
+    else:
 
-    DBI = davies_bouldin_score(X, cluster_indices)
+        DBI = davies_bouldin_score(X, cluster_indices)
 
-    fitness = 1.0 / (DBI + 0.00000001)
+        fitness = 1.0 / (DBI + 0.00000001)
 
     return fitness
 
