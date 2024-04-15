@@ -82,10 +82,11 @@ def main() -> None:
     sil = silhouette_score(X,cluster_indices)
     sil = '{:.4f}'.format(sil)
     DBI = '{:.4f}'.format(DBI)
-
+    fitness = fitness_func_DBI(0,cluster_centers,0)
 
     print(f'Initial DBI: {DBI}')
-    print(f' Initial sil: {sil}')       
+    print(f'Initial sil: {sil}')
+    print(f'Initial fitness: {fitness}')       
 
     
     initial_pop = [list(np.zeros(num_genes))]
@@ -152,12 +153,13 @@ def main() -> None:
     sil = silhouette_score(X,cluster_indices)
     sil = '{:.4f}'.format(sil)
     DBI = '{:.4f}'.format(DBI)
+    fitness = fitness_func_DBI(0,best_solution,0)
 
 
     print(f'Final DBI: {DBI}')
     print(f'Final sil: {sil}')
-
-
+    print(f'Final fitness: {fitness}')
+    ga_instance.plot_fitness()
 
 def on_generation(ga_instance):
     if ga_instance.generations_completed %5 == 0:
