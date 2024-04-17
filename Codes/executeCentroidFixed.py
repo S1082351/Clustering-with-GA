@@ -78,14 +78,14 @@ def main() -> None:
     # Checking DBI and silhouette for the Gonzalez chromosome
     cluster_indices = cluster_data_DBI(cluster_centers, 0)
     
-    DBI = davies_bouldin_score(X, cluster_indices)
+    '''DBI = davies_bouldin_score(X, cluster_indices)
     sil = silhouette_score(X,cluster_indices)
     sil = '{:.4f}'.format(sil)
-    DBI = '{:.4f}'.format(DBI)
+    DBI = '{:.4f}'.format(DBI)'''
     fitness = fitness_func_DBI(0,cluster_centers,0)
 
-    print(f'Initial DBI: {DBI}')
-    print(f'Initial sil: {sil}')
+    '''print(f'Initial DBI: {DBI}')
+    print(f'Initial sil: {sil}')'''
     print(f'Initial fitness: {fitness}')       
 
     
@@ -148,15 +148,15 @@ def main() -> None:
 
 
 
-    DBI = davies_bouldin_score(X, cluster_indices)
+    '''DBI = davies_bouldin_score(X, cluster_indices)
     sil = silhouette_score(X,cluster_indices)
     sil = '{:.4f}'.format(sil)
-    DBI = '{:.4f}'.format(DBI)
+    DBI = '{:.4f}'.format(DBI)'''
     fitness = fitness_func_DBI(0,best_solution,0)
 
 
-    print(f'Final DBI: {DBI}')
-    print(f'Final sil: {sil}')
+    '''print(f'Final DBI: {DBI}')
+    print(f'Final sil: {sil}')'''
     print(f'Final fitness: {fitness}')
     ga_instance.plot_fitness()
 
