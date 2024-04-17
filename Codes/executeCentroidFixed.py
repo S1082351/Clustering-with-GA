@@ -76,9 +76,9 @@ def main() -> None:
     initial_pop = [cluster_centers]
 
     # Checking DBI and silhouette for the Gonzalez chromosome
-    cluster_indices = cluster_data_DBI(cluster_centers, 0)
+    '''cluster_indices = cluster_data_DBI(cluster_centers, 0)
     
-    '''DBI = davies_bouldin_score(X, cluster_indices)
+    DBI = davies_bouldin_score(X, cluster_indices)
     sil = silhouette_score(X,cluster_indices)
     sil = '{:.4f}'.format(sil)
     DBI = '{:.4f}'.format(DBI)'''
