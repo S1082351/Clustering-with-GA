@@ -89,7 +89,6 @@ def main() -> None:
     print(f'Initial fitness: {fitness}')       
 
     
-    initial_pop = [list(np.zeros(num_genes))]
 
 
     
