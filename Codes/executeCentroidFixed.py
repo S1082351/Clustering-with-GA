@@ -104,6 +104,7 @@ def main() -> None:
                        sol_per_pop=int(sol_per_pop),
                        num_parents_mating=num_parents_mating,
                        gene_type=float,
+                       initial_population=initial_pop,
                        # init_range_low=0,
                        # init_range_high=1,                       
                        random_mutation_max_val=random_mutation_max_val,
